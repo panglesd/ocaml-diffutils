@@ -2,6 +2,29 @@
 
 An OCaml library to manipulate diffs, patches, diff3 and merges!
 
+```ocaml
+# open Diffutils ;;
+# module Diff = LCS(Line) ;;
+# let orig = [ "a" ; "b" ; "c"] and new_ = [ "b" ; "x" ; "c" ] ;;
+# Fmt.pr "%a" (Diff.pp_diff Diff.git_diff_printer) diff ;;
+-a
+ b
++x
+ c
+# let base = ["a" ; "b" ; "c"] and me = ["a" ; "e" ; "c"] and you = ["a" ; "z" ; "c" ] ;;
+# let diff = Diff.diff3 ~base ~me ~you ;;
+# Fmt.pr "%a" (Diff.pp_unresolved_merge Diff.git_merge_printer) diff;;
+a
+>>>
+e
+|||
+b
+===
+z
+<<<
+c
+```
+
 This is a work in progress. It is usable but the API might change.
 
 First, a bit of terminology:

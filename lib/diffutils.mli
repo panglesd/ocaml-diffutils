@@ -90,8 +90,9 @@ module LCS (S : S) : sig
   type unresolved_merge =
     [ `Ok of S.t | `Conflict of input * input * input ] list
 
-  val diff3 : base:input -> me:input -> you:input -> patch3
-  val patch3 : input -> patch3 -> unresolved_merge
+  val patch3 : base:input -> me:input -> you:input -> patch3
+  val diff3 : base:input -> me:input -> you:input -> unresolved_merge
+  val apply_patch3 : input -> patch3 -> unresolved_merge
 
   val resolve_merge :
     unresolved_merge -> (old:input -> me:input -> you:input -> input) -> input

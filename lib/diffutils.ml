@@ -362,7 +362,7 @@ module LCS (S : S) = struct
   type unresolved_merge =
     [ `Ok of S.t | `Conflict of input * input * input ] list
 
-  let patch3 orig p3 =
+  let apply_patch3 orig p3 =
     let rec aux orig p3 acc =
       match p3 with
       | `Keep n :: p3 ->
@@ -383,9 +383,13 @@ module LCS (S : S) = struct
     in
     aux orig p3 []
 
-  let diff3 ~base ~me ~you =
-    let p1 = get_patch ~orig:base ~new_:me and p2 = get_patch ~orig:base ~new_:you in
+  let patch3 ~base ~me ~you =
+    let p1 = get_patch ~orig:base ~new_:me
+    and p2 = get_patch ~orig:base ~new_:you in
     diff_patch p1 p2
+
+  let diff3 ~base ~me ~you =
+    apply_patch3 base @@ patch3 ~base ~me ~you
 
   let resolve_merge _unresolved_merge = failwith "implement me"
 
@@ -395,7 +399,7 @@ module LCS (S : S) = struct
   }
 
   let git_merge_printer =
-    let pp = fun fmt -> Fmt.pf fmt "%a\n" S.pp in
+    let pp fmt = Fmt.pf fmt "%a\n" S.pp in
     {
       same = pp;
       conflict =
@@ -413,9 +417,9 @@ module LCS (S : S) = struct
 
   let pp_unresolved_merge printer =
     let pp_item ppf = function
-        | `Ok a -> printer.same ppf a
-        | `Conflict (me, kept, you) ->
-            printer.conflict ppf (me, kept, you) in
+      | `Ok a -> printer.same ppf a
+      | `Conflict (me, kept, you) -> printer.conflict ppf (me, kept, you)
+    in
     Fmt.list ~sep:Fmt.nop pp_item
 
   let print_unresolved_merge printer merged =
@@ -426,5 +430,4 @@ module LCS (S : S) = struct
         | `Conflict (me, kept, you) ->
             Fmt.pr "%a" printer.conflict (me, kept, you))
       merged
-
 end
