@@ -61,10 +61,16 @@ Currently, it is focused on LCS diffs and patches. With it, you can:
   information to recover `b` from `a`.
 - Apply a patch to an input sequence.
 - Get a diff of two input sequences `a` and `b`. The diff is self-contained and
-  ready to be printed in various format.
+  ready to be printed in various format. The algorithm currently implemented is
+  the Myers algorithm (not a variant) with time complexity `O(nd)` and space
+  complexity `O(n²)`. See [here](http://www.xmailserver.org/diff2.pdf) and
+  [there](https://blog.jcoglan.com/2017/02/12/the-myers-diff-algorithm-part-1/).
 - Print diffs and patches in various format (such as an html visualization!)
 - (TODO) Parse patches/diff written in standard format.
-- Find a (LCS) patch3 from three input sequences `base`, `me` and `you`. A patch3 contains the minimal information to recover `me` and `you` from `base`.
-- Find a (LCS) diff3 from three input sequences `base`, `me` and `you`. A diff3 is self-contained and ready to be
+- Find a (LCS) patch3 from three input sequences `base`, `me` and `you`. A
+  patch3 contains the minimal information to recover `me` and `you` from `base`.
+- Find a (LCS) diff3 from three input sequences `base`, `me` and `you`. A diff3
+  is self-contained and ready to be printed (and resolved if there are
+  conflicts).
 - Resolve conflicts in diff3
 - Print diff3 in various formats
