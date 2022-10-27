@@ -34,7 +34,7 @@ module type S = sig
   val pp : t Fmt.t
 end
 
-module Line :  sig
+module Line : sig
   type t = string
 
   val equal : t -> t -> bool
@@ -45,8 +45,7 @@ module LCS (S : S) : sig
   type input = S.t list
   (** {1 Diff between two lists of type {S.t}} *)
 
-  type hunk = [ `Keep of int | `Remove of int | `Add of S.t ]
-  type patch = hunk list
+  type patch = [ `Keep of int | `Remove of int | `Add of S.t ] list
 
   val get_patch : orig:input -> new_:input -> patch
   val apply_patch : input -> patch -> input
@@ -78,12 +77,11 @@ module LCS (S : S) : sig
 
   (** {1 Diff between three lists of type {S.t}} *)
 
-  type patch_conflict = { you : hunk list; me : hunk list }
+  type patch_conflict = { you : patch; me : patch }
 
-  type hunk3 =
+  type patch3 =
     [ `Keep of int | `Me of patch | `You of patch | `Conflict of patch_conflict ]
-
-  type patch3 = hunk3 list
+    list
 
   val diff_patch : patch -> patch -> patch3
 
@@ -96,6 +94,7 @@ module LCS (S : S) : sig
 
   val resolve_merge :
     unresolved_merge -> (old:input -> me:input -> you:input -> input) -> input
+  (** [resolve_merge u f] calls [f] on each [`Conflict] to resolve them *)
 
   type unresolved_merge_printer = {
     same : S.t Fmt.t;
