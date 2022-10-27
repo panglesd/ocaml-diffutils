@@ -4,8 +4,10 @@ An OCaml library to manipulate diffs, patches, diff3 and merges!
 
 ```ocaml
 # open Diffutils ;;
+(** A "Longest-common-subsequence" diff on sequence of lines *)
 # module Diff = LCS(Line) ;;
 # let orig = [ "a" ; "b" ; "c"] and new_ = [ "b" ; "x" ; "c" ] ;;
+# let diff = Diff.diff ~orig ~new_ ;;
 # Fmt.pr "%a" (Diff.pp_diff Diff.git_diff_printer) diff ;;
 -a
  b
@@ -73,4 +75,4 @@ Currently, it is focused on LCS diffs and patches. With it, you can:
   is self-contained and ready to be printed (and resolved if there are
   conflicts).
 - Resolve conflicts in diff3
-- Print diff3 in various formats
+- Print and parse diff3 in various formats
