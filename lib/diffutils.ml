@@ -224,6 +224,39 @@ module LCS (S : S) = struct
       failwith "TODO"
   end
 
+  module Reversible_patch = struct
+    type hunk = Keep of int | Remove of S.t | Add of S.t
+    type t = hunk list
+
+    let get_patch ~orig:_ ~new_:_ = failwith "Implement me"
+    let apply _input _t = failwith "implement me"
+
+    type printer = {
+      keep : S.t Fmt.t;
+      add : S.t Fmt.t;
+      remove : S.t Fmt.t;
+      sep : unit Fmt.t;
+      context : int;
+    }
+
+    let printer ~keep ~add ~remove ~sep ~context =
+      { keep; add; remove; sep; context }
+
+    let git_printer =
+      {
+        keep = (fun _ -> failwith "implement me");
+        add = (fun _ -> failwith "implement me");
+        remove = (fun _ -> failwith "implement me");
+        sep = (fun _ -> failwith "implement me");
+        context = 1;
+      }
+
+    let pp printer =
+      ignore
+        (printer.keep, printer.add, printer.remove, printer.sep, printer.context);
+      failwith "implement me"
+  end
+
   module Diff = struct
     type conflict2 = { orig : S.t list; new_ : S.t list }
     type hunk = Same of S.t | Diff of conflict2

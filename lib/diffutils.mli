@@ -58,9 +58,7 @@ module LCS (S : S) : sig
   (** The input type for most functions: diffing, patching, merging, ... *)
 
   module Patch : sig
-    (** {2 Patches}
-
-        A patch is a minimal information to get from a sequence of values of
+    (** A patch is a minimal information to get from a sequence of values of
         type {!S.t} to another. *)
 
     (** In LCS (Longest Common Subsequence), the only operations allowed are
@@ -88,6 +86,37 @@ module LCS (S : S) : sig
 
     val git_printer : printer
     val pp : t Fmt.t
+  end
+
+  module Reversible_patch : sig
+    (** A patch is a minimal information to get from a sequence of values of
+        type {!S.t} to another, and vice versa. *)
+
+    (** In LCS (Longest Common Subsequence), the only operations allowed are
+        {!Keep} {!Remove} and {!Add}. Contrary to the usual [diff/patch] format,
+        we omit information already present in the original sequence, so
+        {!Remove} takes an integer. *)
+    type hunk = Keep of int | Remove of S.t | Add of S.t
+
+    type t = hunk list
+
+    val get_patch : orig:input -> new_:input -> t
+
+    val apply : input -> t -> input
+    (** From a {!patch} and the original sequence, one can get the new sequence *)
+
+    type printer
+
+    val printer :
+      keep:S.t Fmt.t ->
+      add:S.t Fmt.t ->
+      remove:S.t Fmt.t ->
+      sep:unit Fmt.t ->
+      context:int ->
+      printer
+
+    val git_printer : printer
+    val pp : printer -> t Fmt.t
   end
 
   (** A diff defines two sequence and how they relate to each other. *)
