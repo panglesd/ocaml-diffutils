@@ -249,3 +249,55 @@ val printer : Merge.printer =
 8
 - : unit = ()
 ```
+
+
+```ocaml
+# let base = ["a" ; "b" ; "c"] and me = ["a" ; "y" ; "b" ; "c"] and you = ["a" ; "b" ; "z" ; "c" ] ;;
+val base : string list = ["a"; "b"; "c"]
+val me : string list = ["a"; "y"; "b"; "c"]
+val you : string list = ["a"; "b"; "z"; "c"]
+# let m = Patch3.get_patch ~base ~you ~me ;;
+val m : Patch3.t =
+  [Diffutils.DiffString.Patch3.Keep 1;
+   Diffutils.DiffString.Patch3.Conflict
+    {Diffutils.DiffString.Patch3.you = [];
+     me = [Diffutils.DiffString.Patch.Add "y"]};
+   Diffutils.DiffString.Patch3.Keep 1;
+   Diffutils.DiffString.Patch3.Conflict
+    {Diffutils.DiffString.Patch3.you = [Diffutils.DiffString.Patch.Add "z"];
+     me = []};
+   Diffutils.DiffString.Patch3.Keep 1]
+# let a = Patch3.apply base m ;;
+val a : Diff3.t =
+  [Diffutils.DiffString.Diff3.Same "a";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = []; you = [];
+     me = [Diffutils.DiffString.Patch.Add "y"]};
+   Diffutils.DiffString.Diff3.Same "b";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = [];
+     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
+   Diffutils.DiffString.Diff3.Same "c"]
+# let m = Diff3.diff3 ~base ~you ~me ;;
+val m : Diff3.t =
+  [Diffutils.DiffString.Diff3.Same "a";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = []; you = [];
+     me = [Diffutils.DiffString.Patch.Add "y"]};
+   Diffutils.DiffString.Diff3.Same "b";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = [];
+     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
+   Diffutils.DiffString.Diff3.Same "c"]
+# let m = Merge.merge ~resolver:Merge.no_resolver ~base ~you ~me () ;;
+val m : Merge.t =
+  [Diffutils.DiffString.Merge.Resolved "a";
+   Diffutils.DiffString.Merge.Unresolved
+    {Diffutils.DiffString.Conflict.base = []; you = [];
+     me = [Diffutils.DiffString.Patch.Add "y"]};
+   Diffutils.DiffString.Merge.Resolved "b";
+   Diffutils.DiffString.Merge.Unresolved
+    {Diffutils.DiffString.Conflict.base = [];
+     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
+   Diffutils.DiffString.Merge.Resolved "c"]
+```

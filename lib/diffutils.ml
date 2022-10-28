@@ -366,7 +366,7 @@ module LCS (S : S) = struct
             if m < n then
               find_last_consecutive_ml q1 (Keep (n - m) :: q2) (i + m)
             else if n < m then
-              find_last_consecutive_ml (Keep (m - n) :: q1) q2 (i + m)
+              find_last_consecutive_ml (Keep (m - n) :: q1) q2 (i + n)
             else find_last_consecutive_ml q1 q2 (i + m)
         | _ -> (a, b, i)
       in
