@@ -3,17 +3,25 @@
 An OCaml library to manipulate diffs, patches, diff3 and merges!
 
 ```ocaml
-# open Diffutils ;;
+# open Diffutils.DiffString ;;
 (** A "Longest-common-subsequence" diff on sequence of lines *)
-# module Diff = LCS(Line) ;;
-# let orig = [ "a" ; "b" ; "c"] and new_ = [ "b" ; "x" ; "c" ] ;;
+# let orig = [ "a" ; "b" ; "c" ; "d"] and new_ = [ "b" ; "x" ; "c" ; "z"] ;;
 # let diff = Diff.diff ~orig ~new_ ;;
-# Fmt.pr "%a" (Diff.pp_diff Diff.git_diff_printer) diff ;;
+val diff : Diff.t =
+  [Diff.Diff {Diff.orig = ["a"]; new_ = []};
+   Diff.Same "b";
+   Diff.Diff {Diff.orig = []; new_ = ["x"]};
+   Diff.Same "c";
+   Diff.Diff {Diff.orig = ["d"]; new_ = ["z"]}]
+# Fmt.pr "%a" (Diff.pp Diff.git_printer) diff ;;
 -a
  b
 +x
  c
-# let base = ["a" ; "b" ; "c"] and me = ["a" ; "e" ; "c"] and you = ["a" ; "z" ; "c" ] ;;
+-d
++z
+- : unit = ()
+# let base = ["a" ; "b" ; "c"] and me = ["a" ; "y" ; "b" ; "c"] and you = ["a" ; "b" ; "z" ; "c" ] ;;
 # let diff = Diff.diff3 ~base ~me ~you ;;
 # Fmt.pr "%a" (Diff.pp_unresolved_merge Diff.git_merge_printer) diff;;
 a
@@ -25,6 +33,26 @@ b
 z
 <<<
 c
+# let unresolved = Merge.merge ~resolver:Merge.no_resolver ~base ~you ~me ();;
+val unresolved : Merge.t =
+  [Merge.Resolved "a";
+   Merge.Unresolved
+    {Conflict.base = [];
+               you = [];
+                me = [Patch.Add "y"]};
+   Merge.Resolved "b";
+   Merge.Unresolved
+    {Conflict.base = [];
+               you = [Patch.Add "z"];
+                me = []};
+   Merge.Resolved "c"]
+# let resolved = Merge.apply_resolver Merge.git_resolver unresolved ;;
+val resolved : Merge.t =
+  [Merge.Resolved "a";
+   Merge.Resolved "y";
+   Merge.Resolved "b";
+   Merge.Resolved "z";
+   Merge.Resolved "c"]
 ```
 
 This is a work in progress. It is usable but the API might change.
@@ -53,26 +81,24 @@ First, a bit of terminology:
 
 ## What is this library about?
 
-The goal of this library is not to efficiently implement an efficient diff
-algorithm, but to provide tools to manipulate diffs and patches. It does include
-an LCS diff algorithm though.
+This library is about LCS diff and patch, as well as patch3, diff3 and merge
+that can be defined from these LCS diff/patch. The goal of this library is not
+to efficiently implement an efficient diff algorithm, but to provide tools to
+parse, print and manipulate diffs and patches. It does include an LCS diff
+algorithm though: the Myers algorithm (not a variant) with time complexity
+`O(nd)` and space complexity `O(n²)`, see
+[here](http://www.xmailserver.org/diff2.pdf) and
+[there](https://blog.jcoglan.com/2017/02/12/the-myers-diff-algorithm-part-1/).
 
-Currently, it is focused on LCS diffs and patches. With it, you can:
+Some things you can do with the library:
 
 - Get a patch of two input sequences `a` and `b`. The patch contains the minimal
   information to recover `b` from `a`.
 - Apply a patch to an input sequence.
 - Get a diff of two input sequences `a` and `b`. The diff is self-contained and
-  ready to be printed in various format. The algorithm currently implemented is
-  the Myers algorithm (not a variant) with time complexity `O(nd)` and space
-  complexity `O(n²)`. See [here](http://www.xmailserver.org/diff2.pdf) and
-  [there](https://blog.jcoglan.com/2017/02/12/the-myers-diff-algorithm-part-1/).
+  ready to be printed in various format.
 - Print diffs and patches in various format (such as an html visualization!)
 - (TODO) Parse patches/diff written in standard format.
-- Find a (LCS) patch3 from three input sequences `base`, `me` and `you`. A
-  patch3 contains the minimal information to recover `me` and `you` from `base`.
-- Find a (LCS) diff3 from three input sequences `base`, `me` and `you`. A diff3
-  is self-contained and ready to be printed (and resolved if there are
-  conflicts).
-- Resolve conflicts in diff3
-- Print and parse diff3 in various formats
+- Merge two lists given a common ancestor, with conflicts
+- Resolve, maybe partially, some of these conflicts.
+

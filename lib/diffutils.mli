@@ -2,30 +2,40 @@
 
     - A patch is the smallest information needed to go from one sequence to
       another. Its main use is to update the original file, while being as small
-      as possible.
+      as possible (see
+      {{:https://www.chromium.org/developers/design-documents/software-updates-courgette/}
+      courgette}).
     - On the contrary, a diff consists of the two files organized with common
-      and special parts. Contrary to the patch, it is not minimal, in the sense
-      that it contains the whole two files. It’s main uses is to display the
+      and different parts. Contrary to the patch, it is not minimal, in the
+      sense that it contains the whole two files. Its main use is to display the
       differences to a human.
+    - A merge is an attempt to merge two sequence, given an original sequence.
+      It might contains unresolved conflicts.
 
-    There are multiple kind of patch, depending on the operations allowed to go
-    from one file to an other. The most famous are:
+    There are multiple kind of patches, depending on the operations allowed to
+    go from one file to an other. The most famous are:
 
     - the Longest Common Subsequence (LCS), where deletion and addition are
       allowed,
     - the Lehvenstein distance, where deletion, addition and substitution are
-      allowed
+      allowed (See the {{:https://v2.ocaml.org/api/compilerlibref/Diffing.html}
+      OCaml module Diffing})
     - Block diff where a copy of a whole block from the input is allowed
     - ...
 
-    On the contrary, for diffs, to my knowledge, there is only one used way to
-    display differences: the LCS way.
+    In this library, we focus on the LCS diffs, patches and merges. So it won't
+    to achieve what {{:http://www.daemonology.net/bsdiff/} bsdiff} and other
+    binary patching tools do.
 
-    There is also the diff3 and the merge.
+    This library allows you to:
 
-    In this library, we implement a O(nd) algorithm for a diff, and an algorithm
-    to create diff3 from diffs or patches, as well as tools and printer around
-    it.*)
+    - Diff two lists of elements
+    - Create a LCS patch from one list to another
+    - Create a patch from one list to two others
+    - Create a diff3 between three lists
+    - Merge three lists into one
+    - Resolve possible conflicts
+    - Print and parse in various format the various values of this library *)
 
 module type S = sig
   type t
@@ -42,20 +52,23 @@ module S_String : sig
 end
 
 module LCS (S : S) : sig
+  (** A functor to create a diffing module specialized for a given type. *)
+
   type input = S.t list
+  (** The input type for most functions: diffing, patching, merging, ... *)
 
-  (** {1 Between two lists} *)
-
-  (** {2 Patches}
-
-      A patch is a minimal information to get from a sequence of values of type
-      {!S.t} to another. *)
-
-  (** In LCS (Longest Common Subsequence), the only operations allowed are
-      {!Keep} {!Remove} and {!Add}. We omit information already present in the
-      original sequence. *)
   module Patch : sig
+    (** {2 Patches}
+
+        A patch is a minimal information to get from a sequence of values of
+        type {!S.t} to another. *)
+
+    (** In LCS (Longest Common Subsequence), the only operations allowed are
+        {!Keep} {!Remove} and {!Add}. Contrary to the usual [diff/patch] format,
+        we omit information already present in the original sequence, so
+        {!Remove} takes an integer. *)
     type hunk = Keep of int | Remove of int | Add of S.t
+
     type t = hunk list
 
     val get_patch : orig:input -> new_:input -> t
@@ -76,16 +89,9 @@ module LCS (S : S) : sig
     val git_printer : printer
     val pp : t Fmt.t
   end
-  (** {2 Diffs}
 
-      A diff defines two sequence and how they relate to each other. *)
-
-  (** {2 Printing} *)
-
+  (** A diff defines two sequence and how they relate to each other. *)
   module Diff : sig
-    (** In LCS (Longest Common Subsequence), the only operations allowed are
-        {!Keep} {!Remove} and {!Add}. We omit information already present in the
-        original sequence. *)
     type conflict2 = { orig : S.t list; new_ : S.t list }
     (** In a value of type {!conflict2}, the sequence [orig] and [new_] should
         have no common value. *)
@@ -109,16 +115,14 @@ module LCS (S : S) : sig
     val pp : printer -> t Fmt.t
   end
 
-  (** {1 Between three lists of type {!S.t}} *)
-
-  (** {2 Patches} *)
   module Conflict : sig
     type t = { base : input; you : Patch.t; me : Patch.t }
     (** The reason [you] and [me] are [patch] and not [input] is to be able to
-        quickly check if one is equal to [base]. [you] and [me] as [input] can
-        be recovered using {!apply_patch} with [base]. *)
+        quickly check if one is equal to [base]. [you] and [me] as {!input} can
+        be recovered using {!Patch.apply} with [base]. *)
   end
 
+  (** A diff3 defines 3 lists and how they relate to each other. *)
   module Diff3 : sig
     type hunk = Same of S.t | Diff of Conflict.t
 
@@ -136,7 +140,7 @@ module LCS (S : S) : sig
     val pp : printer -> t Fmt.t
   end
 
-  (** {2 Diffs} *)
+  (** [Patch3] allows to recover two lists from an original one. *)
   module Patch3 : sig
     type patch_conflict = { you : Patch.t; me : Patch.t }
 
@@ -161,8 +165,7 @@ module LCS (S : S) : sig
         value of type {!diff3}. *)
   end
 
-  (** {2 Merges} *)
-
+  (** Merges of three lists *)
   module Merge : sig
     type hunk = Resolved of S.t | Unresolved of Conflict.t
 
@@ -198,11 +201,12 @@ module LCS (S : S) : sig
   end
 end
 
-(** A module for diffing sequence of strings.
-
-    For documentation on the API, see the {!LCS} module. *)
+(** A module for diffing sequence of strings. *)
 module DiffString : sig
   include module type of LCS (S_String)
 
   val git_merge : Merge.resolver
+  (** Additionnaly to the API of {!LCS}, {!DiffString} adds a function to
+      resolve conflict by introducing separators like [">>>"] and ["<<<"],
+      similarly to what [git] does. *)
 end
