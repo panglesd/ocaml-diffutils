@@ -13,16 +13,16 @@
 
 (license MIT)
 
-(documentation  "https://panglesd.github.io/ocaml-diffutils/")
+(documentation "https://panglesd.github.io/ocaml-diffutils/")
 
 (using mdx 0.2)
 
 (package
  (name diffutils)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (synopsis "A library to manipulate diff, patch, diff3, patch3, merge...")
+ (description "A library to manipulate diff, patch, diff3, patch3, merge. Works for any type but has special support for strings ones.")
  (depends
-  (ocaml (>= 4.03))
+  (ocaml (>= 4.08))
    dune
    fmt
   (mdx :with-test))
