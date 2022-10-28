@@ -217,9 +217,4 @@ end
 (** A module for diffing sequence of strings. *)
 module DiffString : sig
   include module type of LCS (S_String)
-
-  val git_merge : Merge.resolver
-  (** Additionnaly to the API of {!LCS}, {!DiffString} adds a function to
-      resolve conflict by introducing separators like [">>>"] and ["<<<"],
-      similarly to what [git] does. *)
 end

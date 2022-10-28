@@ -550,10 +550,4 @@ end
 
 module DiffString = struct
   include LCS (S_String)
-
-  let git_merge { Conflict.base; you; me } =
-    let res = List.map (fun x -> Merge.Resolved x) in
-    let you = Patch.apply base you and me = Patch.apply base me in
-    [ Merge.Resolved ">>>" ] @ res me @ [ Merge.Resolved "|||" ] @ res base
-    @ [ Merge.Resolved "===" ] @ res you @ [ Merge.Resolved "<<<" ]
 end
