@@ -109,7 +109,7 @@ module LCS (S : S) : sig
     val pp : printer -> t Fmt.t
   end
 
-  (** {1 Between three lists of type {S.t}} *)
+  (** {1 Between three lists of type {!S.t}} *)
 
   (** {2 Patches} *)
   module Conflict : sig
