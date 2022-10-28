@@ -1,3 +1,4 @@
 (library
  (name diffutils)
+(public_name diffutils)
 (libraries fmt))

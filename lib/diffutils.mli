@@ -34,7 +34,7 @@ module type S = sig
   val pp : t Fmt.t
 end
 
-module Line : sig
+module S_String : sig
   type t = string
 
   val equal : t -> t -> bool
@@ -43,68 +43,166 @@ end
 
 module LCS (S : S) : sig
   type input = S.t list
-  (** {1 Diff between two lists of type {S.t}} *)
 
-  type patch = [ `Keep of int | `Remove of int | `Add of S.t ] list
+  (** {1 Between two lists} *)
 
-  val get_patch : orig:input -> new_:input -> patch
-  val apply_patch : input -> patch -> input
+  (** {2 Patches}
 
-  type conflict2 = { orig : S.t list; new_ : S.t list }
-  type diff = [ `Same of S.t | `Diff of conflict2 ] list
+      A patch is a minimal information to get from a sequence of values of type
+      {!S.t} to another. *)
 
-  val diff_of_patch : orig:input -> patch -> diff
-  val diff : orig:input -> new_:input -> diff
+  (** In LCS (Longest Common Subsequence), the only operations allowed are
+      {!Keep} {!Remove} and {!Add}. We omit information already present in the
+      original sequence. *)
+  module Patch : sig
+    type hunk = Keep of int | Remove of int | Add of S.t
+    type t = hunk list
 
-  type patch_printer
+    val get_patch : orig:input -> new_:input -> t
 
-  val patch_printer :
-    keep:S.t Fmt.t ->
-    add:S.t Fmt.t ->
-    remove:S.t Fmt.t ->
-    sep:unit Fmt.t ->
-    context:int ->
-    patch_printer
+    val apply : input -> t -> input
+    (** From a {!patch} and the original sequence, one can get the new sequence *)
 
-  type diff_printer
+    type printer
 
-  val diff_printer : same:S.t Fmt.t -> diff:conflict2 Fmt.t -> diff_printer
-  val git_patch_printer : patch_printer
-  val git_diff_printer : diff_printer
-  val html_diff_printer : diff_printer
-  val pp_patch : patch Fmt.t
-  val pp_diff : diff_printer -> diff Fmt.t
+    val printer :
+      keep:S.t Fmt.t ->
+      add:S.t Fmt.t ->
+      remove:S.t Fmt.t ->
+      sep:unit Fmt.t ->
+      context:int ->
+      printer
 
-  (** {1 Diff between three lists of type {S.t}} *)
+    val git_printer : printer
+    val pp : t Fmt.t
+  end
+  (** {2 Diffs}
 
-  type patch_conflict = { you : patch; me : patch }
+      A diff defines two sequence and how they relate to each other. *)
 
-  type patch3 =
-    [ `Keep of int | `Me of patch | `You of patch | `Conflict of patch_conflict ]
-    list
+  (** {2 Printing} *)
 
-  val diff_patch : patch -> patch -> patch3
+  module Diff : sig
+    (** In LCS (Longest Common Subsequence), the only operations allowed are
+        {!Keep} {!Remove} and {!Add}. We omit information already present in the
+        original sequence. *)
+    type conflict2 = { orig : S.t list; new_ : S.t list }
+    (** In a value of type {!conflict2}, the sequence [orig] and [new_] should
+        have no common value. *)
 
-  type unresolved_merge =
-    [ `Ok of S.t | `Conflict of input * input * input ] list
+    type hunk = Same of S.t | Diff of conflict2
+    type t = hunk list
 
-  val patch3 : base:input -> me:input -> you:input -> patch3
-  val diff3 : base:input -> me:input -> you:input -> unresolved_merge
-  val apply_patch3 : input -> patch3 -> unresolved_merge
+    val diff : orig:input -> new_:input -> t
 
-  val resolve_merge :
-    unresolved_merge -> (old:input -> me:input -> you:input -> input) -> input
-  (** [resolve_merge u f] calls [f] on each [`Conflict] to resolve them *)
+    val to_inputs : t -> input * input
+    (** From a {!diff} one can recover both sequences. The original is first. *)
 
-  type unresolved_merge_printer = {
-    same : S.t Fmt.t;
-    conflict : (S.t list * S.t list * S.t list) Fmt.t;
-  }
+    val diff_of_patch : orig:input -> Patch.t -> t
+    (** From a {!patch} and the original sequence, one can get a diff *)
 
-  val git_merge_printer : unresolved_merge_printer
+    type printer
 
-  val print_unresolved_merge :
-    unresolved_merge_printer -> unresolved_merge -> unit
+    val printer : same:S.t Fmt.t -> diff:conflict2 Fmt.t -> printer
+    val git_printer : printer
+    val html_printer : printer
+    val pp : printer -> t Fmt.t
+  end
 
-  val pp_unresolved_merge : unresolved_merge_printer -> unresolved_merge Fmt.t
+  (** {1 Between three lists of type {S.t}} *)
+
+  (** {2 Patches} *)
+  module Conflict : sig
+    type t = { base : input; you : Patch.t; me : Patch.t }
+    (** The reason [you] and [me] are [patch] and not [input] is to be able to
+        quickly check if one is equal to [base]. [you] and [me] as [input] can
+        be recovered using {!apply_patch} with [base]. *)
+  end
+
+  module Diff3 : sig
+    type hunk = Same of S.t | Diff of Conflict.t
+
+    type t = hunk list
+    (** A diff3 defines three lists and how they relate to each others. *)
+
+    val diff3 : base:input -> me:input -> you:input -> t
+
+    val to_inputs : t -> input * input * input
+    (** Recover all three lists from a diff3. Order is [base, you, me]. *)
+
+    type printer = { same : S.t Fmt.t; diff : Conflict.t Fmt.t }
+
+    val git_printer : printer
+    val pp : printer -> t Fmt.t
+  end
+
+  (** {2 Diffs} *)
+  module Patch3 : sig
+    type patch_conflict = { you : Patch.t; me : Patch.t }
+
+    type hunk =
+      | Keep of int
+      (* | Me of patch *)
+      (* | You of patch *)
+      | Conflict of patch_conflict
+
+    type t = hunk list
+    (** A patch between three lists contains the minimal information to recover
+        two lists from the base one. *)
+
+    val get_patch : base:input -> me:input -> you:input -> t
+    (** We can get a {!patch3} with the three files ... *)
+
+    val diff_patch : Patch.t -> Patch.t -> t
+    (** ... or with two patches *)
+
+    val apply : input -> t -> Diff3.t
+    (** Applying a [patch3] will give three files, which will be given as a
+        value of type {!diff3}. *)
+  end
+
+  (** {2 Merges} *)
+
+  module Merge : sig
+    type hunk = Resolved of S.t | Unresolved of Conflict.t
+
+    type t = hunk list
+    (** Represent partially merges, possibly with conflicts *)
+
+    type resolver = Conflict.t -> t
+
+    val apply_resolver : resolver -> t -> t
+    val compose_resolver : resolver -> resolver -> resolver
+    val ( ++ ) : resolver -> resolver -> resolver
+    val git_resolver : resolver
+    val no_resolver : resolver
+
+    val merge :
+      ?resolver:resolver ->
+      base:S.t list ->
+      you:S.t list ->
+      me:S.t list ->
+      unit ->
+      t
+    (** Tries to merge two files given a base. The optional [resolve] argument
+        can resolve some parts and let others unresolved. By default, it
+        resolves the case where either {!diff3_diff.you} or {!diff3_diff.me} is
+        empty (as git does). *)
+
+    val resolve_merge : t -> (Conflict.t -> input) -> input
+    (** [resolve_merge u f] calls [f] on each [`Conflict] to resolve them *)
+
+    type printer = Diff3.printer = { same : S.t Fmt.t; diff : Conflict.t Fmt.t }
+
+    val pp : printer -> t Fmt.t
+  end
+end
+
+(** A module for diffing sequence of strings.
+
+    For documentation on the API, see the {!LCS} module. *)
+module DiffString : sig
+  include module type of LCS (S_String)
+
+  val git_merge : Merge.resolver
 end

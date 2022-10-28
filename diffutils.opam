@@ -12,6 +12,7 @@ bug-reports: "https://github.com/panglesd/ocaml-diffutils/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.4"}
+  "fmt"
   "odoc" {with-doc}
 ]
 build: [

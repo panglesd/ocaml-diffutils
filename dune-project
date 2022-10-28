@@ -14,12 +14,14 @@
 (license MIT)
 
 (documentation  "https://panglesd.github.io/ocaml-diffutils/")
+
 (using mdx 0.2)
+
 (package
  (name diffutils)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune fmt)
  (tags
   (topics "to describe" your project)))
 
