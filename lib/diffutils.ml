@@ -485,6 +485,7 @@ module LCS (S : S) = struct
     type hunk = Resolved of S.t | Unresolved of Conflict.t
     type t = hunk list
     type resolver = Conflict.t -> t
+    type total_resolver = Conflict.t -> input
 
     let git_resolver conflict =
       let is_keep = function Patch.Keep _ -> true | _ -> false in
@@ -502,10 +503,19 @@ module LCS (S : S) = struct
       |> List.map ~f:(function Unresolved c -> solver c | x -> [ x ])
       |> List.concat
 
+    let apply_total_resolver solver l =
+      l
+      |> List.map ~f:(function Unresolved c -> solver c | Resolved x -> [ x ])
+      |> List.concat
+
     let compose_resolver solver1 solver2 conflict =
       conflict |> solver1 |> apply_resolver solver2
 
+    let compose_total_resolver solver1 solver2 conflict =
+      conflict |> solver1 |> apply_total_resolver solver2
+
     let ( ++ ) = compose_resolver
+    let ( && ) = compose_total_resolver
 
     let merge ?resolver ~base ~you ~me () =
       let resolver = Option.value resolver ~default:git_resolver in
@@ -515,12 +525,17 @@ module LCS (S : S) = struct
            | Diff d -> resolver d)
       |> List.concat
 
-    let resolve_merge merge resolve =
+    let total_merge merge resolve =
       merge
       |> List.map ~f:(function
            | Resolved s -> [ s ]
            | Unresolved u -> resolve u)
       |> List.concat
+
+    let git_total_resolver ~begin_ ~sep1 ~sep2 ~end_ { Conflict.base; you; me }
+        =
+      let me = Patch.apply base me and you = Patch.apply base you in
+      begin_ @ me @ sep1 @ base @ sep2 @ you @ end_
 
     type printer = Diff3.printer = { same : S.t Fmt.t; diff : Conflict.t Fmt.t }
 

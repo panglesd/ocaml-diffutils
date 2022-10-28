@@ -173,12 +173,25 @@ module LCS (S : S) : sig
     (** Represent partially merges, possibly with conflicts *)
 
     type resolver = Conflict.t -> t
+    type total_resolver = Conflict.t -> input
 
     val apply_resolver : resolver -> t -> t
+    val apply_total_resolver : total_resolver -> t -> input
     val compose_resolver : resolver -> resolver -> resolver
+    val compose_total_resolver : resolver -> total_resolver -> total_resolver
     val ( ++ ) : resolver -> resolver -> resolver
+    val ( && ) : resolver -> total_resolver -> total_resolver
     val git_resolver : resolver
     val no_resolver : resolver
+
+    val git_total_resolver :
+      begin_:S.t list ->
+      sep1:S.t list ->
+      sep2:S.t list ->
+      end_:S.t list ->
+      total_resolver
+    (** Basically replaces [{base ; me ; you}] with
+        [ begin_ @ me @ sep1 @ base @ sep2 @ you @ end_] *)
 
     val merge :
       ?resolver:resolver ->
@@ -192,8 +205,8 @@ module LCS (S : S) : sig
         resolves the case where either {!diff3_diff.you} or {!diff3_diff.me} is
         empty (as git does). *)
 
-    val resolve_merge : t -> (Conflict.t -> input) -> input
-    (** [resolve_merge u f] calls [f] on each [`Conflict] to resolve them *)
+    val total_merge : t -> total_resolver -> input
+    (** [total_merge u f] calls [f] on each [`Conflict] to resolve them *)
 
     type printer = Diff3.printer = { same : S.t Fmt.t; diff : Conflict.t Fmt.t }
 

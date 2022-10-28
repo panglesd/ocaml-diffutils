@@ -301,3 +301,31 @@ val m : Merge.t =
      you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
    Diffutils.DiffString.Merge.Resolved "c"]
 ```
+
+
+```ocaml
+# let my_resolve ({ Conflict.base; me; you } as c) =
+  let me = Patch.apply base me and you = Patch.apply base you in
+  match (base, me, you) with
+  | [ base ], [ me ], [ you ] ->
+      let me = String.split_on_char ' ' me
+      and base = String.split_on_char ' ' base
+      and you = String.split_on_char ' ' you in
+      let m = Merge.merge ~me ~base ~you () in
+      let begin_ = [ "|||" ]
+      and sep1 = [ "|||" ]
+      and sep2 = [ "|||" ]
+      and end_ = [ "|||" ] in
+      let merged =
+        Merge.total_merge m (Merge.git_total_resolver ~begin_ ~sep1 ~sep2 ~end_)
+      in
+      [ Merge.Resolved (String.concat " " merged) ]
+  | _ -> [ Unresolved c ];;
+val my_resolve : Conflict.t -> Merge.hunk list = <fun>
+# let base = ["abc def ghi jkl"] and you = ["abc xxx def ghi jkl"] and me = ["abc def ghi yyy jkl"];;
+val base : string list = ["abc def ghi jkl"]
+val you : string list = ["abc xxx def ghi jkl"]
+val me : string list = ["abc def ghi yyy jkl"]
+# Merge.apply_resolver my_resolve @@ Merge.merge ~base ~me ~you ();;
+- : Merge.t = [Diffutils.DiffString.Merge.Resolved "abc xxx def ghi yyy jkl"]
+```
