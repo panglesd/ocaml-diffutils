@@ -184,6 +184,7 @@ module LCS (S : S) = struct
 
     let pp _ =
       (* TODO *)
+      let int_min a b = if a < b then a else b in
       let _ =
        fun printer orig patch ->
         let rec aux ?(first = false) orig patch =
@@ -202,7 +203,7 @@ module LCS (S : S) = struct
               let n, orig =
                 if first then (n, orig)
                 else
-                  let taken = Int.min printer.context n in
+                  let taken = int_min printer.context n in
                   let ctx_begin, orig = hdn_rev orig taken in
                   List.iter
                     ~f:(fun a -> Fmt.pr "%a" printer.keep a)
@@ -213,7 +214,7 @@ module LCS (S : S) = struct
               | [] -> ()
               | _ ->
                   let rev1, orig = hdn_rev orig n in
-                  let taken = Int.min printer.context n in
+                  let taken = int_min printer.context n in
                   let ctx_end, _ = hdn_rev rev1 taken in
                   List.iter ~f:(fun a -> Fmt.pr "%a" printer.keep a) ctx_end;
                   aux orig q)

@@ -22,7 +22,7 @@
  (synopsis "A short synopsis")
  (description "A longer description")
  (depends
-   ocaml
+   ocaml (>= 4.03)
    dune
    fmt
   (mdx :with-test))
