@@ -10,7 +10,7 @@ homepage: "https://github.com/panglesd/ocaml-diffutils"
 doc: "https://panglesd.github.io/ocaml-diffutils/"
 bug-reports: "https://github.com/panglesd/ocaml-diffutils/issues"
 depends: [
-  "ocaml"
+  "ocaml" {>= "4.03"}
   "dune" {>= "3.4"}
   "fmt"
   "mdx" {with-test}
