@@ -2,8 +2,8 @@
 ```ocaml
 open Diffutils
 
-let printer = DiffString.git_diff_printer
-let html_printer = DiffString.html_diff_printer
+let printer = DiffString.Diff.git_printer
+let html_printer = DiffString.Diff.html_printer
 open DiffString
 ```
 
@@ -18,18 +18,29 @@ val new_ : string list =
   ["0"; "1"; "2"; "3"; "bli"; "bla"; "7"; "8"; "9"; "10"; "11"; "bb"; "14";
    "15"; "16"]
 
-# let p = get_patch ~orig ~new_ ;;
-val p : patch =
-  [Keep 4; Remove 3; Add "bli"; Add "bla"; Keep 5; Remove 2; Add "bb";
-   Keep 2; Add "16"]
-# let p = diff ~orig ~new_ ;;
-val p : diff =
-  [Same "0"; Same "1"; Same "2"; Same "3";
-   Diff {orig = ["4"; "5"; "6"]; new_ = ["bli"; "bla"]}; Same "7"; Same "8";
-   Same "9"; Same "10"; Same "11"; Diff {orig = ["12"; "13"]; new_ = ["bb"]};
-   Same "14"; Same "15"; Diff {orig = []; new_ = ["16"]}]
+# let p = Patch.get_patch ~orig ~new_ ;;
+val p : Patch.t =
+  [Diffutils.DiffString.Patch.Keep 4; Diffutils.DiffString.Patch.Remove 3;
+   Diffutils.DiffString.Patch.Add "bli";
+   Diffutils.DiffString.Patch.Add "bla"; Diffutils.DiffString.Patch.Keep 5;
+   Diffutils.DiffString.Patch.Remove 2; Diffutils.DiffString.Patch.Add "bb";
+   Diffutils.DiffString.Patch.Keep 2; Diffutils.DiffString.Patch.Add "16"]
+# let p = Diff.diff ~orig ~new_ ;;
+val p : Diff.t =
+  [Diffutils.DiffString.Diff.Same "0"; Diffutils.DiffString.Diff.Same "1";
+   Diffutils.DiffString.Diff.Same "2"; Diffutils.DiffString.Diff.Same "3";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = ["4"; "5"; "6"]; new_ = ["bli"; "bla"]};
+   Diffutils.DiffString.Diff.Same "7"; Diffutils.DiffString.Diff.Same "8";
+   Diffutils.DiffString.Diff.Same "9"; Diffutils.DiffString.Diff.Same "10";
+   Diffutils.DiffString.Diff.Same "11";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = ["12"; "13"]; new_ = ["bb"]};
+   Diffutils.DiffString.Diff.Same "14"; Diffutils.DiffString.Diff.Same "15";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = []; new_ = ["16"]}]
 
-# let _ = Fmt.pr "%a" (pp_diff printer) p; Format.printf "%!" ;;
+# let _ = Fmt.pr "%a" (Diff.pp printer) p; Format.printf "%!" ;;
  0
  1
  2
@@ -51,7 +62,7 @@ val p : diff =
  15
 +16
 - : unit = ()
-# let _ = Fmt.pr "%a%!" (pp_diff html_printer) p ;;
+# let _ = Fmt.pr "%a%!" (Diff.pp html_printer) p ;;
 <div class="common">
   <div class="common-line">0</div><div class="common-line">0</div>
 </div>
@@ -123,45 +134,81 @@ val you : string list = ["1"; "2"; "3"; "4"; "5"; "11"; "7"; "8"]
 Now we do the diff3 of those sequences:
 
 ```ocaml
-# let p1 = diff ~orig:base ~new_:me and p2 = diff ~orig:base ~new_:you;;
-val p1 : diff =
-  [Same "1"; Same "2"; Same "3"; Diff {orig = ["4"]; new_ = []}; Same "5";
-   Diff {orig = ["6"]; new_ = ["10"]}; Same "7"]
-val p2 : diff =
-  [Same "1"; Same "2"; Same "3"; Same "4"; Same "5";
-   Diff {orig = ["6"]; new_ = ["11"]}; Same "7";
-   Diff {orig = []; new_ = ["8"]}]
-# let diff_abc = diff3 ~base ~me ~you ;;
-val diff_abc : diff3 =
-  [Same3 "1"; Same3 "2"; Same3 "3";
-   Diff3 {base = ["4"]; you = [Keep 1]; me = [Remove 1]}; Same3 "5";
-   Diff3
-    {base = ["6"]; you = [Remove 1; Add "11"]; me = [Remove 1; Add "10"]};
-   Same3 "7"; Diff3 {base = []; you = [Add "8"]; me = []}]
+# let p1 = Diff.diff ~orig:base ~new_:me and p2 = Diff.diff ~orig:base ~new_:you;;
+val p1 : Diff.t =
+  [Diffutils.DiffString.Diff.Same "1"; Diffutils.DiffString.Diff.Same "2";
+   Diffutils.DiffString.Diff.Same "3";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = ["4"]; new_ = []};
+   Diffutils.DiffString.Diff.Same "5";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = ["6"]; new_ = ["10"]};
+   Diffutils.DiffString.Diff.Same "7"]
+val p2 : Diff.t =
+  [Diffutils.DiffString.Diff.Same "1"; Diffutils.DiffString.Diff.Same "2";
+   Diffutils.DiffString.Diff.Same "3"; Diffutils.DiffString.Diff.Same "4";
+   Diffutils.DiffString.Diff.Same "5";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = ["6"]; new_ = ["11"]};
+   Diffutils.DiffString.Diff.Same "7";
+   Diffutils.DiffString.Diff.Diff
+    {Diffutils.DiffString.Diff.orig = []; new_ = ["8"]}]
+# let diff_abc = Diff3.diff3 ~base ~me ~you ;;
+val diff_abc : Diff3.t =
+  [Diffutils.DiffString.Diff3.Same "1"; Diffutils.DiffString.Diff3.Same "2";
+   Diffutils.DiffString.Diff3.Same "3";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = ["4"];
+     you = [Diffutils.DiffString.Patch.Keep 1];
+     me = [Diffutils.DiffString.Patch.Remove 1]};
+   Diffutils.DiffString.Diff3.Same "5";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = ["6"];
+     you =
+      [Diffutils.DiffString.Patch.Remove 1;
+       Diffutils.DiffString.Patch.Add "11"];
+     me =
+      [Diffutils.DiffString.Patch.Remove 1;
+       Diffutils.DiffString.Patch.Add "10"]};
+   Diffutils.DiffString.Diff3.Same "7";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = [];
+     you = [Diffutils.DiffString.Patch.Add "8"]; me = []}]
 ```
 
 Let's print it!
 
 ```ocaml
-# let m = get_patch3 ~base ~me ~you ;;
-val m : patch3 =
-  [Keep3 3; Conflict {Diffutils.DiffString.you = [Keep 1]; me = [Remove 1]};
-   Keep3 1;
-   Conflict
-    {Diffutils.DiffString.you = [Remove 1; Add "11"];
-     me = [Remove 1; Add "10"]};
-   Keep3 1; Conflict {Diffutils.DiffString.you = [Add "8"]; me = []}]
-# let m = diff3 ~base ~me ~you ;;
-val m : diff3 =
-  [Same3 "1"; Same3 "2"; Same3 "3";
-   Diff3 {base = ["4"]; you = [Keep 1]; me = [Remove 1]}; Same3 "5";
-   Diff3
-    {base = ["6"]; you = [Remove 1; Add "11"]; me = [Remove 1; Add "10"]};
-   Same3 "7"; Diff3 {base = []; you = [Add "8"]; me = []}]
-# let printer = git_merge_printer ;;
-val printer : diff3_printer = {same = <fun>; diff = <fun>}
+# let m = Patch3.get_patch3 ~base ~me ~you ;;
+Line 1, characters 9-26:
+Error: Unbound value Patch3.get_patch3
+Hint: Did you mean get_patch?
+# let m = Diff3.diff3 ~base ~me ~you ;;
+val m : Diff3.t =
+  [Diffutils.DiffString.Diff3.Same "1"; Diffutils.DiffString.Diff3.Same "2";
+   Diffutils.DiffString.Diff3.Same "3";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = ["4"];
+     you = [Diffutils.DiffString.Patch.Keep 1];
+     me = [Diffutils.DiffString.Patch.Remove 1]};
+   Diffutils.DiffString.Diff3.Same "5";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = ["6"];
+     you =
+      [Diffutils.DiffString.Patch.Remove 1;
+       Diffutils.DiffString.Patch.Add "11"];
+     me =
+      [Diffutils.DiffString.Patch.Remove 1;
+       Diffutils.DiffString.Patch.Add "10"]};
+   Diffutils.DiffString.Diff3.Same "7";
+   Diffutils.DiffString.Diff3.Diff
+    {Diffutils.DiffString.Conflict.base = [];
+     you = [Diffutils.DiffString.Patch.Add "8"]; me = []}]
+# let printer = Diff3.git_printer ;;
+val printer : Merge.printer =
+  {Diffutils.DiffString.Diff3.same = <fun>; diff = <fun>}
 
-# let _ = Fmt.pr "%a%!" (pp_diff3 printer) m;;
+# let _ = Fmt.pr "%a%!" (Diff3.pp printer) m;;
 1
 2
 3
@@ -186,7 +233,7 @@ val printer : diff3_printer = {same = <fun>; diff = <fun>}
 8
 <<<
 - : unit = ()
-# let _ = Fmt.pr "%a%!" (pp_merge printer) (merge ~base ~you ~me ());;
+# let _ = Fmt.pr "%a%!" (Merge.pp printer) (Merge.merge ~base ~you ~me ());;
 1
 2
 3
