@@ -2,9 +2,8 @@
 ```ocaml
 open Diffutils
 
-let printer = DiffString.Diff.git_printer
-let html_printer = DiffString.Diff.html_printer
-open DiffString
+let printer = Diff.git_printer
+let html_printer = Diff.html_printer
 ```
 
 ```ocaml
@@ -20,25 +19,22 @@ val new_ : string list =
 
 # let p = Patch.get_patch ~orig ~new_ ;;
 val p : Patch.t =
-  [Diffutils.DiffString.Patch.Keep 4; Diffutils.DiffString.Patch.Remove 3;
-   Diffutils.DiffString.Patch.Add "bli";
-   Diffutils.DiffString.Patch.Add "bla"; Diffutils.DiffString.Patch.Keep 5;
-   Diffutils.DiffString.Patch.Remove 2; Diffutils.DiffString.Patch.Add "bb";
-   Diffutils.DiffString.Patch.Keep 2; Diffutils.DiffString.Patch.Add "16"]
+  [Diffutils.Patch.Keep 4; Diffutils.Patch.Remove 3;
+   Diffutils.Patch.Add "bli"; Diffutils.Patch.Add "bla";
+   Diffutils.Patch.Keep 5; Diffutils.Patch.Remove 2;
+   Diffutils.Patch.Add "bb"; Diffutils.Patch.Keep 2;
+   Diffutils.Patch.Add "16"]
 # let p = Diff.diff ~orig ~new_ ;;
 val p : Diff.t =
-  [Diffutils.DiffString.Diff.Same "0"; Diffutils.DiffString.Diff.Same "1";
-   Diffutils.DiffString.Diff.Same "2"; Diffutils.DiffString.Diff.Same "3";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = ["4"; "5"; "6"]; new_ = ["bli"; "bla"]};
-   Diffutils.DiffString.Diff.Same "7"; Diffutils.DiffString.Diff.Same "8";
-   Diffutils.DiffString.Diff.Same "9"; Diffutils.DiffString.Diff.Same "10";
-   Diffutils.DiffString.Diff.Same "11";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = ["12"; "13"]; new_ = ["bb"]};
-   Diffutils.DiffString.Diff.Same "14"; Diffutils.DiffString.Diff.Same "15";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = []; new_ = ["16"]}]
+  [Diffutils.Diff.Same "0"; Diffutils.Diff.Same "1"; Diffutils.Diff.Same "2";
+   Diffutils.Diff.Same "3";
+   Diffutils.Diff.Diff
+    {Diffutils.Diff.orig = ["4"; "5"; "6"]; new_ = ["bli"; "bla"]};
+   Diffutils.Diff.Same "7"; Diffutils.Diff.Same "8"; Diffutils.Diff.Same "9";
+   Diffutils.Diff.Same "10"; Diffutils.Diff.Same "11";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = ["12"; "13"]; new_ = ["bb"]};
+   Diffutils.Diff.Same "14"; Diffutils.Diff.Same "15";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = []; new_ = ["16"]}]
 
 # let _ = Fmt.pr "%a" (Diff.pp printer) p; Format.printf "%!" ;;
  0
@@ -136,77 +132,68 @@ Now we do the diff3 of those sequences:
 ```ocaml
 # let p1 = Diff.diff ~orig:base ~new_:me and p2 = Diff.diff ~orig:base ~new_:you;;
 val p1 : Diff.t =
-  [Diffutils.DiffString.Diff.Same "1"; Diffutils.DiffString.Diff.Same "2";
-   Diffutils.DiffString.Diff.Same "3";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = ["4"]; new_ = []};
-   Diffutils.DiffString.Diff.Same "5";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = ["6"]; new_ = ["10"]};
-   Diffutils.DiffString.Diff.Same "7"]
+  [Diffutils.Diff.Same "1"; Diffutils.Diff.Same "2"; Diffutils.Diff.Same "3";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = ["4"]; new_ = []};
+   Diffutils.Diff.Same "5";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = ["6"]; new_ = ["10"]};
+   Diffutils.Diff.Same "7"]
 val p2 : Diff.t =
-  [Diffutils.DiffString.Diff.Same "1"; Diffutils.DiffString.Diff.Same "2";
-   Diffutils.DiffString.Diff.Same "3"; Diffutils.DiffString.Diff.Same "4";
-   Diffutils.DiffString.Diff.Same "5";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = ["6"]; new_ = ["11"]};
-   Diffutils.DiffString.Diff.Same "7";
-   Diffutils.DiffString.Diff.Diff
-    {Diffutils.DiffString.Diff.orig = []; new_ = ["8"]}]
+  [Diffutils.Diff.Same "1"; Diffutils.Diff.Same "2"; Diffutils.Diff.Same "3";
+   Diffutils.Diff.Same "4"; Diffutils.Diff.Same "5";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = ["6"]; new_ = ["11"]};
+   Diffutils.Diff.Same "7";
+   Diffutils.Diff.Diff {Diffutils.Diff.orig = []; new_ = ["8"]}]
 # let diff_abc = Diff3.diff3 ~base ~me ~you ;;
 val diff_abc : Diff3.t =
-  [Diffutils.DiffString.Diff3.Same "1"; Diffutils.DiffString.Diff3.Same "2";
-   Diffutils.DiffString.Diff3.Same "3";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = ["4"];
-     you = [Diffutils.DiffString.Patch.Keep 1];
-     me = [Diffutils.DiffString.Patch.Remove 1]};
-   Diffutils.DiffString.Diff3.Same "5";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = ["6"];
-     you =
-      [Diffutils.DiffString.Patch.Remove 1;
-       Diffutils.DiffString.Patch.Add "11"];
-     me =
-      [Diffutils.DiffString.Patch.Remove 1;
-       Diffutils.DiffString.Patch.Add "10"]};
-   Diffutils.DiffString.Diff3.Same "7";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = [];
-     you = [Diffutils.DiffString.Patch.Add "8"]; me = []}]
+  [Diffutils.Diff3.Same "1"; Diffutils.Diff3.Same "2";
+   Diffutils.Diff3.Same "3";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = ["4"]; you = [Diffutils.Patch.Keep 1];
+     me = [Diffutils.Patch.Remove 1]};
+   Diffutils.Diff3.Same "5";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = ["6"];
+     you = [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "11"];
+     me = [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "10"]};
+   Diffutils.Diff3.Same "7";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = [Diffutils.Patch.Add "8"]; me = []}]
 ```
 
 Let's print it!
 
 ```ocaml
-# let m = Patch3.get_patch3 ~base ~me ~you ;;
-Line 1, characters 9-26:
-Error: Unbound value Patch3.get_patch3
-Hint: Did you mean get_patch?
+# let m = Patch3.get_patch ~base ~me ~you ;;
+val m : Patch3.t =
+  [Diffutils.Patch3.Keep 3;
+   Diffutils.Patch3.Conflict
+    {Diffutils.Patch3.you = [Diffutils.Patch.Keep 1];
+     me = [Diffutils.Patch.Remove 1]};
+   Diffutils.Patch3.Keep 1;
+   Diffutils.Patch3.Conflict
+    {Diffutils.Patch3.you =
+      [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "11"];
+     me = [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "10"]};
+   Diffutils.Patch3.Keep 1;
+   Diffutils.Patch3.Conflict
+    {Diffutils.Patch3.you = [Diffutils.Patch.Add "8"]; me = []}]
 # let m = Diff3.diff3 ~base ~me ~you ;;
 val m : Diff3.t =
-  [Diffutils.DiffString.Diff3.Same "1"; Diffutils.DiffString.Diff3.Same "2";
-   Diffutils.DiffString.Diff3.Same "3";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = ["4"];
-     you = [Diffutils.DiffString.Patch.Keep 1];
-     me = [Diffutils.DiffString.Patch.Remove 1]};
-   Diffutils.DiffString.Diff3.Same "5";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = ["6"];
-     you =
-      [Diffutils.DiffString.Patch.Remove 1;
-       Diffutils.DiffString.Patch.Add "11"];
-     me =
-      [Diffutils.DiffString.Patch.Remove 1;
-       Diffutils.DiffString.Patch.Add "10"]};
-   Diffutils.DiffString.Diff3.Same "7";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = [];
-     you = [Diffutils.DiffString.Patch.Add "8"]; me = []}]
+  [Diffutils.Diff3.Same "1"; Diffutils.Diff3.Same "2";
+   Diffutils.Diff3.Same "3";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = ["4"]; you = [Diffutils.Patch.Keep 1];
+     me = [Diffutils.Patch.Remove 1]};
+   Diffutils.Diff3.Same "5";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = ["6"];
+     you = [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "11"];
+     me = [Diffutils.Patch.Remove 1; Diffutils.Patch.Add "10"]};
+   Diffutils.Diff3.Same "7";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = [Diffutils.Patch.Add "8"]; me = []}]
 # let printer = Diff3.git_printer ;;
-val printer : Merge.printer =
-  {Diffutils.DiffString.Diff3.same = <fun>; diff = <fun>}
+val printer : Merge.printer = {Diffutils.Diff3.same = <fun>; diff = <fun>}
 
 # let _ = Fmt.pr "%a%!" (Diff3.pp printer) m;;
 1
@@ -258,48 +245,40 @@ val me : string list = ["a"; "y"; "b"; "c"]
 val you : string list = ["a"; "b"; "z"; "c"]
 # let m = Patch3.get_patch ~base ~you ~me ;;
 val m : Patch3.t =
-  [Diffutils.DiffString.Patch3.Keep 1;
-   Diffutils.DiffString.Patch3.Conflict
-    {Diffutils.DiffString.Patch3.you = [];
-     me = [Diffutils.DiffString.Patch.Add "y"]};
-   Diffutils.DiffString.Patch3.Keep 1;
-   Diffutils.DiffString.Patch3.Conflict
-    {Diffutils.DiffString.Patch3.you = [Diffutils.DiffString.Patch.Add "z"];
-     me = []};
-   Diffutils.DiffString.Patch3.Keep 1]
+  [Diffutils.Patch3.Keep 1;
+   Diffutils.Patch3.Conflict
+    {Diffutils.Patch3.you = []; me = [Diffutils.Patch.Add "y"]};
+   Diffutils.Patch3.Keep 1;
+   Diffutils.Patch3.Conflict
+    {Diffutils.Patch3.you = [Diffutils.Patch.Add "z"]; me = []};
+   Diffutils.Patch3.Keep 1]
 # let a = Patch3.apply base m ;;
 val a : Diff3.t =
-  [Diffutils.DiffString.Diff3.Same "a";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = []; you = [];
-     me = [Diffutils.DiffString.Patch.Add "y"]};
-   Diffutils.DiffString.Diff3.Same "b";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = [];
-     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
-   Diffutils.DiffString.Diff3.Same "c"]
+  [Diffutils.Diff3.Same "a";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = []; me = [Diffutils.Patch.Add "y"]};
+   Diffutils.Diff3.Same "b";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = [Diffutils.Patch.Add "z"]; me = []};
+   Diffutils.Diff3.Same "c"]
 # let m = Diff3.diff3 ~base ~you ~me ;;
 val m : Diff3.t =
-  [Diffutils.DiffString.Diff3.Same "a";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = []; you = [];
-     me = [Diffutils.DiffString.Patch.Add "y"]};
-   Diffutils.DiffString.Diff3.Same "b";
-   Diffutils.DiffString.Diff3.Diff
-    {Diffutils.DiffString.Conflict.base = [];
-     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
-   Diffutils.DiffString.Diff3.Same "c"]
+  [Diffutils.Diff3.Same "a";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = []; me = [Diffutils.Patch.Add "y"]};
+   Diffutils.Diff3.Same "b";
+   Diffutils.Diff3.Diff
+    {Diffutils.Conflict.base = []; you = [Diffutils.Patch.Add "z"]; me = []};
+   Diffutils.Diff3.Same "c"]
 # let m = Merge.merge ~resolver:Merge.no_resolver ~base ~you ~me () ;;
 val m : Merge.t =
-  [Diffutils.DiffString.Merge.Resolved "a";
-   Diffutils.DiffString.Merge.Unresolved
-    {Diffutils.DiffString.Conflict.base = []; you = [];
-     me = [Diffutils.DiffString.Patch.Add "y"]};
-   Diffutils.DiffString.Merge.Resolved "b";
-   Diffutils.DiffString.Merge.Unresolved
-    {Diffutils.DiffString.Conflict.base = [];
-     you = [Diffutils.DiffString.Patch.Add "z"]; me = []};
-   Diffutils.DiffString.Merge.Resolved "c"]
+  [Diffutils.Merge.Resolved "a";
+   Diffutils.Merge.Unresolved
+    {Diffutils.Conflict.base = []; you = []; me = [Diffutils.Patch.Add "y"]};
+   Diffutils.Merge.Resolved "b";
+   Diffutils.Merge.Unresolved
+    {Diffutils.Conflict.base = []; you = [Diffutils.Patch.Add "z"]; me = []};
+   Diffutils.Merge.Resolved "c"]
 ```
 
 
@@ -327,5 +306,5 @@ val base : string list = ["abc def ghi jkl"]
 val you : string list = ["abc xxx def ghi jkl"]
 val me : string list = ["abc def ghi yyy jkl"]
 # Merge.apply_resolver my_resolve @@ Merge.merge ~base ~me ~you ();;
-- : Merge.t = [Diffutils.DiffString.Merge.Resolved "abc xxx def ghi yyy jkl"]
+- : Merge.t = [Diffutils.Merge.Resolved "abc xxx def ghi yyy jkl"]
 ```
